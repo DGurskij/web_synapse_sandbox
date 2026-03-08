@@ -1,13 +1,11 @@
-import { IPoint } from 'src/core/math';
-import { CircleShape } from '../model/CircleShape';
-import { RectangleShape } from '../model/RectangleShape';
-import { PolygonShape } from 'src/model/PolygonShape';
+import { IPoint2d } from 'src/core/math';
+import { Polygon2dModel } from 'src/model/Polygon2dModel';
 
 export interface IDrawParams {
   /**
    * default is { x: 0, y: 0 }
    */
-  position?: IPoint;
+  position?: IPoint2d;
   /**
    * default is black
    */
@@ -19,7 +17,5 @@ export interface IDrawParams {
 }
 
 export interface IRenderer {
-  drawCircle(circle: CircleShape, params: IDrawParams): void;
-  drawRectangle(rectangle: RectangleShape, params: IDrawParams): void;
-  drawPolygon(polygon: PolygonShape, params: IDrawParams): void;
+  drawPolygon2d(polygon: Polygon2dModel, params: IDrawParams): void;
 }

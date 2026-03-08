@@ -1,68 +1,88 @@
-import { IPoint } from '../math';
-import { Shape } from 'src/model/Shape';
-import { IPhysicalObjectConfig } from './structure';
+import { Model } from 'src/model/Model';
+import { IPoint3d } from '../math';
+
+export interface IPhysicalObjectConfig {
+  position: IPoint3d;
+  velocity: IPoint3d;
+  acceleration: IPoint3d;
+  angle?: number;
+
+  mass: number;
+  model: Model;
+}
 
 /**
- * Базовый класс физических объектов мира.
- * Имеет позицию, скорость, массу и форму (круг) для коллизий и отрисовки.
+ * Base class for physical objects in the world.
+ * Contain common properties, 2d or 3d must be implemented in the subclass.
+ * TODO: add methods for collision detection and resolution.
  */
 export abstract class PhysicalObject {
-  protected _position: IPoint;
-  protected _velocity: IPoint;
-  protected _acceleration: IPoint;
+  protected _position: IPoint3d;
+  protected _velocity: IPoint3d;
+  protected _acceleration: IPoint3d;
+
+  protected _angle: number;
+  public _angleVelocity: number;
+
   protected _mass: number;
-  protected _radius: number;
-  protected _shape: Shape | undefined;
+
+  /**
+   * Model used for collision resolve, not RENDERING, for rendering use gettter
+   */
+  protected _model: Model;
 
   constructor(params: IPhysicalObjectConfig) {
-    this._position = params.position ?? { x: 0, y: 0 };
-    this._velocity = { x: 0, y: 0 };
-    this._acceleration = { x: 0, y: 0 };
-    this._mass = params.mass ?? 1;
-    this._radius = params.radius ?? 10;
+    this._position = params.position;
+    this._velocity = params.velocity;
+    this._acceleration = params.acceleration;
+
+    this._angle = params.angle ?? 0;
+    this._angleVelocity = 0;
+
+    this._mass = params.mass;
+    this._model = params.model;
   }
 
-  get position(): IPoint {
+  get model() {
+    return this._model;
+  }
+
+  get x() {
+    return this._position.x;
+  }
+  get y() {
+    return this._position.y;
+  }
+  get z() {
+    return this._position.z;
+  }
+  get position(): Readonly<IPoint3d> {
     return this._position;
   }
 
-  get velocity(): IPoint {
+  get vx() {
+    return this._velocity.x;
+  }
+  get vy() {
+    return this._velocity.y;
+  }
+  get vz() {
+    return this._velocity.z;
+  }
+  get velocity(): Readonly<IPoint3d> {
     return this._velocity;
   }
 
-  get mass(): number {
+  get angle() {
+    return this._angle;
+  }
+
+  get mass() {
     return this._mass;
   }
 
-  get radius(): number {
-    return this._radius;
-  }
-
-  get shape(): Shape | undefined {
-    return this._shape;
-  }
-
-  applyImpulse(fx: number, fy: number) {
-    if (this._mass > 0) {
-      this._velocity.x += fx / this._mass;
-      this._velocity.y += fy / this._mass;
-    }
-  }
-
-  translatePosition(dx: number, dy: number) {
-    this._position.x += dx;
-    this._position.y += dy;
-  }
-
-  update() {
-    this._velocity.x += this._acceleration.x;
-    this._velocity.y += this._acceleration.y;
-    this._position.x += this._velocity.x;
-    this._position.y += this._velocity.y;
-
-    this._velocity.x *= 0.98;
-    this._velocity.y *= 0.98;
-
-    this._acceleration = { x: 0, y: 0 };
-  }
+  abstract checkCollision(other: PhysicalObject): boolean;
+  abstract applyForce(force: number[]): void;
+  abstract translatePosition(delta: number[]): void;
+  abstract update(): void;
 }

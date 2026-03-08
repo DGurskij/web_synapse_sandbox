@@ -1,12 +1,8 @@
-import { ShapeConfig } from 'src/model/ShapeFactory';
-import { IPoint } from '../math';
+import { Shape2dConfig } from 'src/shape/Shape2dFactory';
+import { IPoint2d } from '../math';
 
-export interface IPhysicalObjectConfig {
-  position?: IPoint;
+export interface IPhysicalObject2dConfig {
+  position?: IPoint2d;
   mass?: number;
-  radius?: number;
-}
-
-export interface IStoneConfig extends IPhysicalObjectConfig {
-  shapeCfg?: ShapeConfig;
+  shapeCfg?: Shape2dConfig;
 }

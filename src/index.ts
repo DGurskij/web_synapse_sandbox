@@ -1,4 +1,4 @@
-import { drawScene } from './core/DrawFunctions';
+import { drawScene } from './core/graphics/Canvas2dDraw';
 import { sandboxEngine } from './core/EngineFunctions';
 import { Sandbox } from './core/Sandbox';
 import { keyPressHdl, mouseDownHdl, mouseMoveHdl, mouseUpHdl, mouseWheelHdl, setAreaSize } from './core/Controller';

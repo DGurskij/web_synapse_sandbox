@@ -1,5 +1,5 @@
 import { IMuscleConfig, ILimbConfig, IOrganismConfig } from './core/organism/structure';
-import { IPhysicalObjectConfig, IStoneConfig } from './core/physics/structure';
+// import { IPhysicalObjectConfig, IStoneConfig } from './core/physics/structure';
 
 export interface ISandboxConfig {
   /**
@@ -14,8 +14,6 @@ export interface ISandboxConfig {
 
 export interface ISandboxStartSettings {
   organisms?: IOrganismConfig[];
-  physicalObjects?: IPhysicalObjectConfig[];
-  stones?: IStoneConfig[];
 }
 
 export type { IMuscleConfig, ILimbConfig, IOrganismConfig };

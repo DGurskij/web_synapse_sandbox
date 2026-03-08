@@ -1,4 +1,3 @@
-import { resolveOrganismPhysicalCollision } from 'src/core/physics';
 import { Sandbox } from './Sandbox';
 
 /**
@@ -15,17 +14,10 @@ export function sandboxEngine(this: Sandbox) {
   }
 
   for (const organism of this.organisms) {
-    organism.interactWithWorld();
+    organism.interactWithWorld(this.timer);
   }
 
-  const COLLISION_ITERATIONS = 3;
-  for (let iter = 0; iter < COLLISION_ITERATIONS; iter++) {
-    for (const organism of this.organisms) {
-      for (const physical of this.physicalObjects) {
-        resolveOrganismPhysicalCollision(organism, physical);
-      }
-    }
-  }
+  // TODO: world step with calculating collisions, recalculate end acceleration, velocity, position
 
   this.drawFunction();
 }

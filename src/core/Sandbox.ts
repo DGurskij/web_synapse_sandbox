@@ -1,9 +1,11 @@
-import { IOrganismConfig, ISandboxStartSettings } from 'src/interfaces';
-import { PhysicalObject, Stone } from 'src/core/physics';
+import { ILimbConfig, IOrganismConfig, ISandboxStartSettings } from 'src/interfaces';
+import { PhysicalObject } from 'src/core/physics/PhysicalObject';
 import { Organism } from './organism/Organism';
 import { IRenderer } from 'src/render/IRenderer';
 import { Canvas2dRender } from 'src/render/Canvas2dRenderer';
-import { IStoneConfig } from './physics/structure';
+import { PhysicalObject2d } from './physics/PhysicalObject2d';
+import { Shape2dFactory } from 'src/shape/Shape2dFactory';
+import { ICreateLimb } from './organism/Limb';
 
 export class Sandbox {
   renderer: IRenderer;
@@ -41,6 +43,8 @@ export class Sandbox {
 
   context: CanvasRenderingContext2D;
 
+  timer: number = 0;
+
   organisms: Organism[] = [];
   physicalObjects: PhysicalObject[] = [];
 
@@ -69,10 +73,11 @@ export class Sandbox {
     this.lastTime = performance.now();
     this.frameTime = 1000 / this.engineFPS;
 
-    console.log('spawn organisms');
+    if (config.organisms) {
+      config.organisms.forEach(organism => this.spawnOrganism(organism));
+    }
 
-    this.organisms = config.organisms?.map(organism => new Organism(organism)) || [];
-    this.physicalObjects = config.stones?.map(c => new Stone(c)) || config.physicalObjects?.map(c => new Stone(c)) || [];
+    this.timer = 0;
 
     this.loop();
   }
@@ -90,6 +95,7 @@ export class Sandbox {
 
       // const t1 = performance.now();
       this.engineFunction();
+      this.timer += 1;
       // const t2 = performance.now();
       this.drawFunction();
       // const t3 = performance.now();
@@ -150,12 +156,36 @@ export class Sandbox {
   }
 
   spawnOrganism(config: IOrganismConfig) {
-    const organism = new Organism(config);
+    const bodyPhysics = new PhysicalObject2d({
+      position: config.body.position,
+      mass: config.body.mass,
+      model: Shape2dFactory.createShape(config.body.shapeCfg),
+    });
+
+    const limbs = config.limbs ? config.limbs.map(limb => this.createLimb(limb)) : [];
+
+    // limbs[1].physics._angleVelocity = 0.03;
+    // limbs[1].childLimbs![0]!.physics._angleVelocity = 0.06;
+
+    const organism = new Organism({
+      body: { physics: bodyPhysics, color: config.body.color },
+      limbs,
+      brain: config.brain,
+    });
+
     this.organisms.push(organism);
   }
 
-  spawnStone(config: IStoneConfig) {
-    const stone = new Stone(config);
-    this.physicalObjects.push(stone);
+  private createLimb(config: ILimbConfig): ICreateLimb {
+    const physics = new PhysicalObject2d({
+      position: config.parentAttachmentPoint,
+      mass: config.mass,
+      model: Shape2dFactory.createShape(config.shapeCfg),
+      angle: config.initialAngle,
+    });
+
+    const childLimbs = config.childLimbs?.map(childLimb => this.createLimb(childLimb));
+
+    return { physics, selfAttachmentPoint: config.selfAttachmentPoint, childLimbs, color: config.color };
   }
 }

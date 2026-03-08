@@ -1,5 +1,5 @@
-import { ShapeConfig } from 'src/model/ShapeFactory';
-import { IPoint } from '../math';
+import { Shape2dConfig } from 'src/shape/Shape2dFactory';
+import { IPoint2d } from '../math';
 
 /**
  * Structures with descriptions ot the organism fields and how it works
@@ -10,14 +10,19 @@ import { IPoint } from '../math';
  */
 
 export interface IBodyConfig {
-  /**
-   * default is circle with radius = size / 2
-   */
-  shapeCfg?: ShapeConfig;
+  position: IPoint2d;
   /**
    * Mass of the body
    */
-  mass?: number;
+  mass: number;
+  /**
+   * Shape of the body
+   */
+  shapeCfg: Shape2dConfig;
+  /**
+   * Color of the body
+   */
+  color: string;
 }
 
 /**
@@ -43,7 +48,7 @@ export interface IMuscleConfig {
   /**
    * Direction of the force vector
    */
-  direction?: IPoint;
+  direction?: IPoint2d;
 }
 
 /**
@@ -51,26 +56,22 @@ export interface IMuscleConfig {
  */
 export interface ILimbConfig {
   /**
-   * Parent: -1 or undefined = body, 0..n = index of parent limb
-   */
-  parentIndex?: number;
-  /**
    * Attachment point relative to parent: body center if parent is body,
    * parent limb's pivot (in parent's local coords) if parent is a limb
    */
-  attachmentPoint?: IPoint;
+  parentAttachmentPoint: IPoint2d;
   /**
-   * Small offset from attachment for drawing (centers shape). Default: from shape.
+   * Small offset from attachment for drawing (centers shape). Default: 0, 0
    */
-  offset?: IPoint;
+  selfAttachmentPoint?: IPoint2d;
   /**
    * Mass of the limb
    */
-  mass?: number;
+  mass: number;
   /**
    * Rotate limb relative attachment point
    */
-  attachmentAngle?: number;
+  initialAngle?: number;
   /**
    * Max rotation angle in radians (symmetric: ±maxAngle from base direction)
    */
@@ -79,26 +80,56 @@ export interface ILimbConfig {
   /**
    * Muscles of the limb
    */
-  muscles?: readonly IMuscleConfig[];
+  muscles?: IMuscleConfig[];
 
   /**
    * Shape of the limb, default is rectangle with width = size and height = size / 2
    */
-  shapeCfg?: ShapeConfig;
+  shapeCfg: Shape2dConfig;
+
+  /**
+   * Color of the limb
+   */
+  color: string;
+
+  childLimbs?: ILimbConfig[];
+}
+
+export interface INeuronConfig {
+  v: number;
+  thresh: number;
+  refractoryPeriod: number;
+  outAmplitude: number;
+}
+
+export interface IBrainConfig {
+  neuronCapacity: number;
+  neuronMaxOutgoingSynapses: number;
+  spikeStrongerThreshold: number;
+
+  motorNeuronCount: number;
+  sensorNeuronCount: number;
+  interneuronCount: number;
+
+  motorNeuronConfig: INeuronConfig;
+  sensorNeuronConfig: INeuronConfig;
+  interneuronConfig: INeuronConfig;
 }
 
 /**
  * Organism configuration
  */
 export interface IOrganismConfig {
-  position?: IPoint;
-
   /**
    * Body of the organism
    */
-  body?: IBodyConfig;
+  body: IBodyConfig;
   /**
    * Limbs of the organism
    */
-  limbs?: readonly ILimbConfig[];
+  limbs?: ILimbConfig[];
+  /**
+   * Brain of the organism
+   */
+  brain: IBrainConfig;
 }

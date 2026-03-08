@@ -1,24 +1,41 @@
-import { Shape } from 'src/model/Shape';
-import { IBodyConfig } from './structure';
-import { ShapeFactory } from 'src/model/ShapeFactory';
+import { Model } from 'src/model/Model';
+import { PhysicalObject } from '../physics/PhysicalObject';
+
+export interface ICreateBody {
+  physics: PhysicalObject;
+  color: string;
+}
 
 /**
  * Core body of the organism
  */
 export class Body {
-  private _shape: Shape;
-  private _mass: number;
+  private _physics: PhysicalObject;
 
-  constructor(config: IBodyConfig) {
-    this._shape = ShapeFactory.createShape(config.shapeCfg || { type: 'circle', params: { radius: 0 } });
-    this._mass = config.mass ?? 0;
+  private _color: string;
+
+  constructor(config: ICreateBody) {
+    this._physics = config.physics;
+    this._color = config.color;
   }
 
-  get shape(): Shape {
-    return this._shape;
+  get model(): Model {
+    return this._physics.model;
   }
 
-  get mass(): number {
-    return this._mass;
+  get physics(): PhysicalObject {
+    return this._physics;
+  }
+
+  get mass() {
+    return this._physics.mass;
+  }
+
+  get color(): string {
+    return this._color;
+  }
+
+  update() {
+    this._physics.update();
   }
 }
