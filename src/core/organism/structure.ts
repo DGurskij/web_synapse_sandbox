@@ -102,6 +102,18 @@ export interface INeuronConfig {
   outAmplitude: number;
 }
 
+export interface IConnectionConfig {
+  nearestCount: number;
+  middleCount: number;
+  farthestCount: number;
+}
+
+export interface IConnectionRangeProfile {
+  nearestRange: number;
+  middleRange: number;
+  farthestRange: number;
+}
+
 export interface IBrainConfig {
   neuronCapacity: number;
   neuronMaxOutgoingSynapses: number;
@@ -114,6 +126,9 @@ export interface IBrainConfig {
   motorNeuronConfig: INeuronConfig;
   sensorNeuronConfig: INeuronConfig;
   interneuronConfig: INeuronConfig;
+
+  connectionConfig: IConnectionConfig;
+  connectionRangeProfile: IConnectionRangeProfile;
 }
 
 /**

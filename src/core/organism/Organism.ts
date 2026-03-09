@@ -1,5 +1,6 @@
 import { Body, ICreateBody } from './Body';
 import { Brain, IBrainCreate } from './brain/Brain';
+import { NeuronType } from './brain/Neuron';
 import { Limb, ICreateLimb } from './Limb';
 import { IMotorUnit } from './MotorUnit';
 import { IReceptor } from './Receptor';
@@ -29,32 +30,25 @@ export class Organism {
     this._motorUnits = [];
     this._receptors = [];
 
-    // for (const limb of this._limbs) {
-    //   for (const muscle of limb.muscles) {
-    //     const neuronId = this._brain.addNeuron();
+    this.limbs.forEach(limb => {
+      this.linkMotorUnitsToMuscles(limb);
+    });
 
-    //     this._motorUnits.push({
-    //       neuronId,
-    //       limb,
-    //       muscle,
-    //     });
-    //   }
-    // }
+    console.log('Organism connected motor neurons:', this._motorUnits.length);
 
-    // // FIXME: this is a temporary solution to add receptors
-    // for (let i = 0; i < 10; i++) {
-    //   const neuronId = this._brain.addNeuron({
-    //     v: 0,
-    //     thresh: 0.5,
-    //     refractoryPeriod: 1,
-    //     outAmplitude: 1,
-    //   });
+    // FIXME: this is a temporary solution to add receptors
+    for (let i = 0; i < 40; i++) {
+      const neuronIds = this._brain.useNeurons(10, NeuronType.SENSOR);
 
-    //   this._receptors.push({
-    //     neuronId,
-    //     gain: 1.0,
-    //   });
-    // }
+      neuronIds.forEach(neuronId => {
+        this._receptors.push({
+          neuronId,
+          gain: Math.random() * 0.3 + 1.3,
+        });
+      });
+    }
+
+    console.log('Organism connected receptors:', this._receptors.length);
 
     this._totalMass = this._computeTotalMass();
   }
@@ -75,7 +69,7 @@ export class Organism {
     // TODO: add receptors logic
     for (const r of this._receptors) {
       // rare spikes
-      const shouldFire = Math.random() < 0.1; // 10% chance
+      const shouldFire = Math.random() < 0.5; // 10% chance
       if (!shouldFire) continue;
 
       const value = Math.random() * r.gain; // amplitude
@@ -86,9 +80,11 @@ export class Organism {
 
     for (const motorUnit of this._motorUnits) {
       const [spiked, amplitude] = this._brain.spikedWithAmplitude(motorUnit.neuronId);
+
       if (spiked) {
         const connectionForce = motorUnit.muscle.contraction(amplitude);
         motorUnit.limb.physics.applyForce(connectionForce);
+        // console.log('applied force', connectionForce);
       }
     }
   }
@@ -97,5 +93,24 @@ export class Organism {
     this._brain.update();
     this._body.update();
     this._limbs.forEach(limb => limb.update());
+  }
+
+  private linkMotorUnitsToMuscles(limb: Limb): void {
+    limb.muscles.forEach(muscle => {
+      const neuronIds = this._brain.useNeurons(10, NeuronType.MOTOR);
+
+      neuronIds.forEach((neuronId, i) => {
+        this._motorUnits.push({
+          neuronId,
+          limb,
+          muscle,
+          gain: (i + 1) / 10,
+        });
+      });
+    });
+
+    if (limb.childLimbs.length > 0) {
+      limb.childLimbs.forEach(childLimb => this.linkMotorUnitsToMuscles(childLimb));
+    }
   }
 }

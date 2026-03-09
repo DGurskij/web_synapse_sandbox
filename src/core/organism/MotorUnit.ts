@@ -5,4 +5,5 @@ export interface IMotorUnit {
   neuronId: number;
   limb: Limb;
   muscle: Muscle;
+  gain: number;
 }

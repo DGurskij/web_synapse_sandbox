@@ -16,8 +16,14 @@
  *  6) refractoryPeriod
  *
  *  7) outAmplitude
+ *
+ *  8) coord X
+ *
+ *  9) coord Y
  */
-export type Neuron = [number, number, number, number, number, number, number, number];
+export type Neuron = [number, number, number, number, number, number, number, number, number, number];
+
+export const NEURON_RADIUS = 0.03;
 
 /***
  * Neuron physical exist state
@@ -59,23 +65,31 @@ export const enum NeuronField {
   /**
    * Membrane potential
    */
-  V = 2,
+  V = 3,
   /**
    * Activation threshold
    */
-  THRESH = 3,
+  THRESH = 4,
   /**
    * Last spike time
    */
-  LAST_T = 4,
+  LAST_T = 5,
   /**
    * Refractory period
    */
-  REFRACTORY_PERIOD = 5,
+  REFRACTORY_PERIOD = 6,
   /**
    * Output amplitude
    */
-  OUT_AMPLITUDE = 6,
+  OUT_AMPLITUDE = 7,
+  /**
+   * coord X
+   */
+  COORD_X = 8,
+  /**
+   * coord Y
+   */
+  COORD_Y = 9,
 }
 
 /**

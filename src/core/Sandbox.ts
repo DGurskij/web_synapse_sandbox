@@ -1,4 +1,4 @@
-import { ILimbConfig, IOrganismConfig, ISandboxStartSettings } from 'src/interfaces';
+import { ILimbConfig, IMuscleConfig, IOrganismConfig, ISandboxStartSettings } from 'src/interfaces';
 import { PhysicalObject } from 'src/core/physics/PhysicalObject';
 import { Organism } from './organism/Organism';
 import { IRenderer } from 'src/render/IRenderer';
@@ -6,6 +6,7 @@ import { Canvas2dRender } from 'src/render/Canvas2dRenderer';
 import { PhysicalObject2d } from './physics/PhysicalObject2d';
 import { Shape2dFactory } from 'src/shape/Shape2dFactory';
 import { ICreateLimb } from './organism/Limb';
+import { ICreateMuscle } from './organism/Muscle';
 
 export class Sandbox {
   renderer: IRenderer;
@@ -186,6 +187,22 @@ export class Sandbox {
 
     const childLimbs = config.childLimbs?.map(childLimb => this.createLimb(childLimb));
 
-    return { physics, selfAttachmentPoint: config.selfAttachmentPoint, childLimbs, color: config.color };
+    return {
+      physics,
+      selfAttachmentPoint: config.selfAttachmentPoint,
+      childLimbs,
+      color: config.color,
+      muscles: config.muscles?.map(muscle => this.createMuscle(muscle)),
+    };
+  }
+
+  private createMuscle(config: IMuscleConfig): ICreateMuscle {
+    return {
+      strength: config.strength ?? 1,
+      endurance: config.endurance ?? 100,
+      maxEndurance: config.maxEndurance ?? 100,
+      enduranceRestoreKf: config.enduranceRestoreKf ?? 0.1,
+      direction: { x: config.direction?.x ?? 0, y: config.direction?.y ?? 0, z: 0 },
+    };
   }
 }

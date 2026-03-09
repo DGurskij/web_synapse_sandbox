@@ -110,6 +110,7 @@ export function maintainSynapse(synapse: Synapse) {
   }
 
   if (synapse[SynapseField.COUNT_BAD_CYCLES] > 1000) {
+    console.log('pruning synapse', synapse[SynapseField.PRE_SYNAPTIC_NEURON], synapse[SynapseField.POST_SYNAPTIC_NEURON]);
     synapse[SynapseField.STATE] = SynapseState.PRUNED; // prune synapse
   }
 }

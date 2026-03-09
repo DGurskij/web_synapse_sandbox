@@ -1,5 +1,24 @@
-import { createNeuronPool, createNeuronSynapsePool, ISynapsePool } from './BrainPools';
-import { fillNeuron, INeuronCreate, Neuron, NEURON_TYPE_TO_STRING, NeuronField, NeuronState, NeuronType, stepNeuron } from './Neuron';
+import {
+  createNeuronPool,
+  createNeuronSynapsePool,
+  distributeNeurons2d,
+  freeSynapsePool,
+  IConnectionConfig,
+  IConnectionRangeProfile,
+  initializeNeuronsConnection2d,
+  ISynapsePool,
+} from './BrainPools';
+import {
+  fillNeuron,
+  INeuronCreate,
+  Neuron,
+  NEURON_RADIUS,
+  NEURON_TYPE_TO_STRING,
+  NeuronField,
+  NeuronState,
+  NeuronType,
+  stepNeuron,
+} from './Neuron';
 import { hebbianUpdate, maintainSynapse, relaxSynapse, SynapseField, SynapseState } from './Synapse';
 
 export interface IBrainCreate {
@@ -14,6 +33,9 @@ export interface IBrainCreate {
   motorNeuronConfig: INeuronCreate;
   sensorNeuronConfig: INeuronCreate;
   interneuronConfig: INeuronCreate;
+
+  connectionConfig: IConnectionConfig;
+  connectionRangeProfile: IConnectionRangeProfile;
 }
 
 export class Brain {
@@ -27,6 +49,9 @@ export class Brain {
   private _motorNeuronConfig: INeuronCreate;
   private _sensorNeuronConfig: INeuronCreate;
   private _interneuronConfig: INeuronCreate;
+
+  private _connectionConfig: IConnectionConfig;
+  private _connectionRangeProfile: IConnectionRangeProfile;
 
   private _idleNeuronsIds: Record<NeuronType, number[]>;
 
@@ -42,11 +67,16 @@ export class Brain {
 
   private _inputs: Float32Array;
 
+  private _lastTickSpikedNeurons: number = 0;
+
   constructor(config: IBrainCreate) {
     this._neuronCount = 0;
     this._neuronCapacity = config.neuronCapacity;
     this._neuronMaxOutgoingSynapses = config.neuronMaxOutgoingSynapses;
     this._neurons = createNeuronPool(this._neuronCapacity);
+    distributeNeurons2d(this._neurons, NEURON_RADIUS);
+
+    console.log('Neurons pool created with capacity:', this._neurons.length);
 
     this._idToIndex = new Map<number, number>();
 
@@ -54,12 +84,17 @@ export class Brain {
     this._sensorNeuronConfig = config.sensorNeuronConfig;
     this._interneuronConfig = config.interneuronConfig;
 
+    this._connectionConfig = config.connectionConfig;
+    this._connectionRangeProfile = config.connectionRangeProfile;
+
     this._spikesPrev = Array(this._neuronCapacity).fill(false);
     this._spikesNext = Array(this._neuronCapacity).fill(false);
 
     this._spikeStrongerThreshold = config.spikeStrongerThreshold;
 
     this._neuronOutgoingSynapses = createNeuronSynapsePool(this._neuronCapacity, this._neuronMaxOutgoingSynapses);
+
+    console.log('Synapse pools created with capacity of each pool:', this._neuronOutgoingSynapses.length);
 
     this._previousTime = 0;
     this._inputs = new Float32Array(this._neuronCapacity);
@@ -74,13 +109,32 @@ export class Brain {
       this.synthesisNeuron(NeuronType.SENSOR, this._sensorNeuronConfig);
     }
 
+    console.log('Synthesized', config.sensorNeuronCount, 'sensor neurons');
+
     for (let i = 0; i < config.motorNeuronCount; i++) {
       this.synthesisNeuron(NeuronType.MOTOR, this._motorNeuronConfig);
     }
 
+    console.log('Synthesized', config.motorNeuronCount, 'motor neurons');
+
     for (let i = 0; i < config.interneuronCount; i++) {
       this.synthesisNeuron(NeuronType.INTERNEURON, this._interneuronConfig);
     }
+
+    console.log('Synthesized', config.interneuronCount, 'interneuron neurons');
+
+    initializeNeuronsConnection2d(
+      this._neurons,
+      this._neuronCount,
+      this._neuronOutgoingSynapses,
+      this._connectionConfig,
+      this._connectionRangeProfile,
+      {
+        everyN: 1000,
+      },
+    );
+
+    console.log('Neurons connection initialized, count:', this._neuronCount);
   }
 
   get totalSynapseCount() {
@@ -217,6 +271,8 @@ export class Brain {
       const neuron = this._neurons[i];
       const spiked = stepNeuron(neuron, this._inputs[i], timeNow);
       this._spikesNext[i] = spiked;
+
+      this._lastTickSpikedNeurons += spiked ? 1 : 0;
     }
 
     // copy spikes array
@@ -243,6 +299,9 @@ export class Brain {
 
     this.compactNeurons();
     this.compactSynapses();
+
+    // console.log('last tick spiked neurons:', this._lastTickSpikedNeurons);
+    this._lastTickSpikedNeurons = 0;
   }
 
   private compactNeurons() {
@@ -259,16 +318,27 @@ export class Brain {
           const movedNeuron = this._neurons[lastIndex];
           const movedId = movedNeuron[NeuronField.ID];
 
-          // swap
+          // swap neurons
           const tmp = this._neurons[k];
           this._neurons[k] = movedNeuron;
           this._neurons[lastIndex] = tmp;
+
+          // swap spikes
+          const tmpPrev = this._spikesPrev[k];
+          this._spikesPrev[k] = this._spikesPrev[lastIndex];
+          this._spikesPrev[lastIndex] = tmpPrev;
+
+          // swap synapse pool
+          const tmpPool = this._neuronOutgoingSynapses[k];
+          this._neuronOutgoingSynapses[k] = this._neuronOutgoingSynapses[lastIndex];
+          this._neuronOutgoingSynapses[lastIndex] = tmpPool;
 
           // update index for moved neuron
           this._idToIndex.set(movedId, k);
         }
 
         this._neurons[lastIndex][NeuronField.STATE] = NeuronState.FREE; // now deleted object marked as free
+        freeSynapsePool(this._neuronOutgoingSynapses[lastIndex]);
         this._neuronCount--;
       } else {
         k++;
